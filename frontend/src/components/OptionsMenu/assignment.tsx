@@ -1,5 +1,6 @@
 "use client";
 
+import { MarkdownEditor } from "@/components/Markdown";
 import * as React from "react";
 import { useState } from "react";
 import IconButton from "@mui/material/IconButton";
@@ -63,6 +64,7 @@ export default function AssignmentMenu({ id, assignment }: Props): JSX.Element {
   const [name, setName] = useState<string>(
     assignment.name ? assignment.name : ""
   );
+  const [instructions, setInstructions] = useState(assignment.instructions ?? "");
   const [visibleDate, setVisibleDate] = useState<Dayjs | null>(
     dayjs(assignment.visibledate)
   );
@@ -76,6 +78,7 @@ export default function AssignmentMenu({ id, assignment }: Props): JSX.Element {
   };
   const handleEditOptionClick = () => {
     setAnchorEl(null);
+    setInstructions(assignment.instructions ?? "");
     setOpenDialog(true);
   };
   const handleDialogClose = () => {
@@ -111,6 +114,7 @@ export default function AssignmentMenu({ id, assignment }: Props): JSX.Element {
 
     const editedAssignment: NewAssignment = {
       name: name,
+      instructions,
       visibledate: date,
       deadline: deadline1,
     };
@@ -297,6 +301,8 @@ export default function AssignmentMenu({ id, assignment }: Props): JSX.Element {
               fullWidth
               variant="standard"
             />
+
+            <MarkdownEditor label="Assignment instructions" value={instructions} onChange={setInstructions} />
 
             <DialogContentText sx={{ mt: 4, mb: 2 }}>
               Set a date and time for this file to become visible for students.

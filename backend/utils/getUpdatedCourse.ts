@@ -2,7 +2,7 @@ import { Course } from "../models";
 import { getCommonInclude, getCommonOrder } from "./courseFetching";
 
 async function getUpdatedCourse(courseId: number): Promise<Course | null> {
-  const commonAttributes = { exclude: ["teacherId"] };
+  const commonAttributes = { exclude: ["teacherId", "registrationPasswordHash"] };
   const commonInclude = getCommonInclude(false);
   const commonOrder = getCommonOrder();
 

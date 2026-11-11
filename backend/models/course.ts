@@ -9,6 +9,7 @@ class Course extends Model {
   public teacherId!: number;
   public chapters!: ChapterType[];
   public zoomName!: string;
+  public registrationPasswordHash!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -32,6 +33,10 @@ Course.init(
       type: DataTypes.BOOLEAN,
       allowNull: true,
     },
+    registrationPasswordHash: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     zoomName: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -43,6 +48,7 @@ Course.init(
     underscored: true,
     timestamps: true,
     modelName: "course",
+    defaultScope: { attributes: { exclude: ["registrationPasswordHash"] } },
   }
 );
 

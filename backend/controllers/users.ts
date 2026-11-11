@@ -2,7 +2,7 @@ import express from "express";
 import User from "../models/user";
 import { Course, Enrollment } from "../models";
 import { QueryTypes } from "sequelize";
-import getUpdatedCourse from "../utils/getUpdatedCourse";
+import { sequelize } from "../utils/db";
 import { tokenExtractor } from "../utils/middleware";
 import { CustomRequest } from "../types";
 import Blacklistedtoken from "../models/blacklistedtoken";
@@ -124,46 +124,31 @@ router.get("/:id", tokenExtractor, async (req: CustomRequest, res) => {
 // Function to allow users to sign up an account and join a course directly, perfect for teachers to send invite links to students and they can create their accounts and join the course instantly.
 
 router.post("/directsignup/:id", async (req, res, next) => {
-  const courseId = req.params.id;
-  console.log(courseId);
-  const course = await Course.findByPk(courseId);
-  if (!course) {
-    return res.status(404).send("Course not found");
+  const { username, name, password, email, registrationPassword } = req.body;
+  if (typeof registrationPassword !== "string" || !/^[A-Za-z0-9_-]{24}$/.test(registrationPassword)) {
+    return res.status(403).send("Invalid course registration password");
+  }
+  if (typeof password !== "string" || password.length < 8 || Buffer.byteLength(password) > 72) {
+    return res.status(400).send("Use a password of at least 8 characters and at most 72 bytes");
   }
 
-  // Creating user first
-  const { username, name, password, email } = req.body;
-
-  const saltRounds = 10;
   try {
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-    const user = await User.create({
-      username: username,
-      name: name,
-      passwordHash: passwordHash,
-      role: "student",
-      email: email,
+    const course = await Course.unscoped().findByPk(req.params.id, {
+      attributes: ["id", "template", "registrationPasswordHash"],
     });
-
-    // Now, to add the student to the course
-    console.log(user);
-
-    const userId = user.id;
-    const courseIdNum = course.id;
-
-    // Use Sequelize's built-in create method instead of raw SQL
-    await Enrollment.create({
-      userId: userId,
-      courseId: courseIdNum,
-    });
-
-    const editedCourse = await getUpdatedCourse(course.id);
-    if (!editedCourse) {
-      return res.status(404).send("Course not found");
+    if (!course || course.get("template") === true || !course.registrationPasswordHash ||
+        !(await bcrypt.compare(registrationPassword, course.registrationPasswordHash))) {
+      return res.status(403).send("Invalid course registration password");
     }
-    return res.json(editedCourse);
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await sequelize.transaction(async (transaction) => {
+      const user = await User.create({ username, name, passwordHash, role: "student", email }, { transaction });
+      await Enrollment.create({ userId: user.id, courseId: course.id }, { transaction });
+    });
+    return res.status(201).end();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

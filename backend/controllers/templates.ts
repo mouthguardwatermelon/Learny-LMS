@@ -21,7 +21,7 @@ router.get("/", tokenExtractor, async (req: CustomRequest, res, next) => {
     // GET templates created by a teacher
     if (user.role === "teacher") {
       const templates = await Course.findAll({
-        attributes: { exclude: ["teacherId"] },
+        attributes: { exclude: ["teacherId", "registrationPasswordHash"] },
         where: {
           teacherId: {
             [Op.eq]: user.id,
