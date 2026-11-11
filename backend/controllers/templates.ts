@@ -1,3 +1,4 @@
+import { courseObjectLock, sequelize } from "../utils/db";
 import express from "express";
 import { Section, User, File, Chapter } from "../models";
 import { Course } from "../models";
@@ -118,93 +119,98 @@ router.post(
           );
       }
 
-      // find the template
-      const template = await Course.findOne({
-        where: { id: req.params.id },
-        include: [
-          {
-            model: User,
-            as: "teacher",
-            attributes: ["name", "username", "id", "email", "role"],
-          },
-          {
-            model: User,
-            as: "students",
-            attributes: ["name", "username", "id", "email", "role"],
-            through: {
-              attributes: [],
+      const copied = await sequelize.transaction(async (transaction) => {
+        await sequelize.query("SELECT pg_advisory_xact_lock_shared(:key)", {
+          replacements: { key: courseObjectLock }, transaction,
+        });
+        // find the template
+        const template = await Course.findOne({
+          transaction,
+          where: { id: req.params.id },
+          include: [
+            {
+              model: User,
+              as: "teacher",
+              attributes: ["name", "username", "id", "email", "role"],
             },
-          },
-          {
-            model: Chapter,
-            as: "chapters",
-            attributes: ["title", "id"],
-            order: [["createdAt", "DESC"]],
-            include: [
-              {
-                model: Section,
-                as: "sections",
-                order: [["createdAt", "DESC"]],
-                include: [
-                  {
-                    model: File,
-                    as: "files",
-                    order: [["createdAt", "DESC"]],
-                  },
-                ],
+            {
+              model: User,
+              as: "students",
+              attributes: ["name", "username", "id", "email", "role"],
+              through: {
+                attributes: [],
               },
-            ],
-          },
-        ],
-      });
-
-      if (!template) {
-        return res.status(404).send("Template not found");
-      }
-
-      const course = await Course.create({
-        title: req.body.title ? req.body.title : template.title,
-        description: req.body.description
-          ? req.body.description
-          : template.description,
-        teacherId: user.id, // Assign the user's ID to the course
-        template: false,
-        chapters: [],
-      });
-
-      // to duplicate chapters
-      for (var i = 0; i < template.chapters.length; i++) {
-        const tempChapter = template.chapters[i];
-        const newChapter = await Chapter.create({
-          title: tempChapter.title,
-          sections: [],
-          courseId: course.id,
+            },
+            {
+              model: Chapter,
+              as: "chapters",
+              attributes: ["title", "id"],
+              order: [["createdAt", "DESC"]],
+              include: [
+                {
+                  model: Section,
+                  as: "sections",
+                  order: [["createdAt", "DESC"]],
+                  include: [
+                    {
+                      model: File,
+                      as: "files",
+                      order: [["createdAt", "DESC"]],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         });
 
-        // to duplicate sections
-        for (var i = 0; i < tempChapter.sections.length; i++) {
-          const tempSection = tempChapter.sections[i];
-          const newSection = await Section.create({
-            title: tempSection.title,
-            files: [],
-            chapterId: newChapter.id,
-          });
+        if (!template) {
+          return res.status(404).send("Template not found");
+        }
 
-          // to duplicate files
-          for (var i = 0; i < tempSection.files.length; i++) {
-            const tempFile = tempSection.files[i];
-            const newFile = await File.create({
-              name: tempFile.name,
-              link: tempFile.link,
-              sectionId: newSection.id,
-              awskey: tempFile.awskey,
-              visibledate: tempFile.visibledate,
-            });
+        const course = await Course.create({
+          title: req.body.title ? req.body.title : template.title,
+          description: req.body.description
+            ? req.body.description
+            : template.description,
+          teacherId: user.id, // Assign the user's ID to the course
+          template: false,
+          chapters: [],
+        }, { transaction });
+
+        // to duplicate chapters
+        for (const tempChapter of template.chapters) {
+          const newChapter = await Chapter.create({
+            title: tempChapter.title,
+            sections: [],
+            courseId: course.id,
+          }, { transaction });
+
+          // to duplicate sections
+          for (const tempSection of tempChapter.sections) {
+            const newSection = await Section.create({
+              title: tempSection.title,
+              files: [],
+              chapterId: newChapter.id,
+            }, { transaction });
+
+            // to duplicate files
+            for (const tempFile of tempSection.files) {
+              await File.create({
+                name: tempFile.name,
+                link: tempFile.link,
+                sectionId: newSection.id,
+                awskey: tempFile.awskey,
+                visibledate: tempFile.visibledate,
+              }, { transaction });
+            }
           }
         }
-      }
 
-      return res.json(course);
+        return course;
+      });
+      if (!(copied instanceof Course)) return copied;
+      return res.json(copied);
     } catch (error) {
       return next(error);
     }

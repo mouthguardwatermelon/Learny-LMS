@@ -62,6 +62,12 @@ export const tokenExtractor = async (
     // Find the user by ID
     const user = await User.findByPk(userId);
     if (user instanceof User) {
+      const authVersion = typeof decodedToken === "object" && "authVersion" in decodedToken
+        ? decodedToken.authVersion
+        : 0;
+      if (user.disabled || authVersion !== user.authVersion) {
+        return res.status(401).send("Your session has expired. Please sign in again.");
+      }
       req.user = user;
     } else {
       return res.status(404).send("User not found");

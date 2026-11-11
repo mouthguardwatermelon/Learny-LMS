@@ -33,6 +33,7 @@ import { styled } from "@mui/material/styles";
 import { Course } from "@/types";
 import { isNull } from "util";
 import { Button } from "@mui/material";
+import TeacherTools from "./TeacherTools";
 import courseService from "@/services/courses";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -336,6 +337,7 @@ export default function SettingsPage({ courseId }: { courseId: number }) {
                           InputProps={{ readOnly: true }} fullWidth />
                       )}
                     </div>
+                    <TeacherTools key={course.id} course={course} />
                     <div className="mt-12 mb-8 flex justify-between mx-auto">
                       <h1 className="text-3xl tracking-tight font-semibold text-gray-900 dark:text-white">
                         Students

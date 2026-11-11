@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import express from "express";
 import { Section, File, Chapter } from "../models";
 import { Course } from "../models";
@@ -79,7 +80,7 @@ router.post(
 
       // Defining parameters for S3 file upload
       const params = {
-        Key: dirName + fileName,
+        Key: dirName + randomUUID() + "-" + fileName,
         Body: fileData,
         Bucket: bucketName ? bucketName : "",
         ContentType: req?.file.mimetype,
@@ -159,7 +160,7 @@ router.post(
 
       // Defining parameters for S3 file upload
       const params = {
-        Key: dirName + fileName,
+        Key: dirName + randomUUID() + "-" + fileName,
         Body: fileData,
         Bucket: bucketName ? bucketName : "",
         ContentType: req?.file.mimetype,

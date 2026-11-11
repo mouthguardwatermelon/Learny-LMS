@@ -8,6 +8,7 @@ class User extends Model {
   public role!: string;
   public email!: string;
   public passwordHash!: string;
+  public authVersion!: number;
   public disabled!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -36,6 +37,7 @@ User.init(
       type: DataTypes.ENUM("student", "teacher", "admin"),
       allowNull: false,
     },
+    authVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     disabled: {
       type: DataTypes.BOOLEAN,
       allowNull: true,

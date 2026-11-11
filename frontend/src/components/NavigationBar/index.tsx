@@ -247,9 +247,7 @@ function NavigationBar() {
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
               >
-                <MenuItem onClick={handleCloseUserMenu}>
-                  <Typography textAlign="center">Profile</Typography>
-                </MenuItem>
+                <MenuItem component="a" href="/profile">Profile</MenuItem>
                 <MenuItem onClick={logout}>
                   <Typography textAlign="center" >
                     Log out

@@ -39,3 +39,6 @@ export const rollbackMigration = async () => {
   const migrator = new Umzug(migrationConf);
   await migrator.down();
 };
+
+// Serialize deletion of unreferenced objects against course content copies.
+export const courseObjectLock = 13857231;

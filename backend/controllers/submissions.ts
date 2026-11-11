@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import express from "express";
 import {
   Section,
@@ -106,7 +107,7 @@ router.put(
 
       // Defining parameters for S3 file upload
       const params = {
-        Key: dirName + fileName,
+        Key: dirName + randomUUID() + "-" + fileName,
         Body: fileData,
         Bucket: bucketName ? bucketName : "",
         ContentType: req?.file.mimetype,

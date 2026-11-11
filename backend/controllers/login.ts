@@ -37,6 +37,7 @@ router.post("/", async (request, response, next) => {
     const userForToken = {
       username: user.username,
       id: user.id,
+      authVersion: user.authVersion,
     };
 
     const token = jwt.sign(userForToken, SECRET, { expiresIn: '24h' });

@@ -403,6 +403,41 @@ const changePasswordAdmin = async (id: number, newPassword: string) => {
   return data;
 }
 
+export interface AccountProfile {
+  name: string;
+  username: string;
+  email: string;
+  role: string;
+}
+
+export async function getProfile() {
+  const { data } = await axios.get<AccountProfile>(apiBaseUrl + "/users/me", {
+    headers: { Authorization: token },
+  });
+  return data;
+}
+
+export async function updateProfileSettings(settings: { email: string; currentPassword: string; newPassword?: string }) {
+  const { data } = await axios.put<AccountProfile>(apiBaseUrl + "/users/me/settings", settings, {
+    headers: { Authorization: token },
+  });
+  return data;
+}
+
+export interface CourseDocument {
+  id?: number;
+  title: string;
+  body: string;
+}
+
+export async function teacherTool<T>(method: "GET" | "POST" | "PUT" | "DELETE", path: string, data?: unknown) {
+  const response = await axios.request<T>({
+    method, url: apiBaseUrl + "/teacher-tools/" + path, data,
+    headers: { Authorization: token },
+  });
+  return response.data;
+}
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
   getAll,
