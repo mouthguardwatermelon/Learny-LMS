@@ -1,11 +1,16 @@
 import { Typography, Button, Box } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Inter } from "next/font/google";
-import Image from "next/image";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const NotFoundPage = () => {
+const messages = {
+  403: "You do not have access to this course.",
+  404: "The page you are looking for does not exist.",
+  500: "The course could not be loaded. Please try again.",
+};
+
+const NotFoundPage = ({ status = 404 }: { status?: keyof typeof messages }) => {
   const theme = createTheme({
     typography: {
       fontFamily: inter.style.fontFamily,
@@ -39,7 +44,7 @@ const NotFoundPage = () => {
                 fontWeight={700}
                 gutterBottom
               >
-                404
+                {status}
               </Typography>
               <Typography
                 variant="h5"
@@ -47,7 +52,7 @@ const NotFoundPage = () => {
                 color="textSecondary"
                 gutterBottom
               >
-                Oops! The page you are looking for does not exist.
+                {messages[status]}
               </Typography>
               <Button
                 variant="outlined"

@@ -194,15 +194,15 @@ export const getOneCourseByRole = async (user: User, courseId: number) => {
   let where: any = { id: courseId };
   if (user.role === "teacher") {
     where = {
+      ...where,
       teacherId: { [Op.eq]: user.id },
       template: { [Op.not]: true },
     };
   } else if (user.role === "student") {
     where = {
+      ...where,
       template: { [Op.not]: true },
     };
-  } else if (user.role === "admin") {
-    where = {};
   }
 
   return await Course.findAll({
