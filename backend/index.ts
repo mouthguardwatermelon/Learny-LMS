@@ -1,6 +1,7 @@
 import express, { Application } from "express";
 import { connectToDatabase } from "./utils/db";
 import usersRouter from "./controllers/users";
+import tuitionPaymentsRouter from "./controllers/TuitionPayments";
 import coursesRouter from "./controllers/courses";
 import chaptersRouter from "./controllers/chapters";
 import sectionsRouter from "./controllers/sections";
@@ -24,6 +25,7 @@ const cors = require("cors");
 app.use(cors());
 
 app.use("/api/courses", coursesRouter);
+app.use("/api/tuition-payments", tuitionPaymentsRouter);
 app.use("/api/templates", templatesRouter);
 app.use("/api/chapters", chaptersRouter);
 app.use("/api/sections", sectionsRouter);

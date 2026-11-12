@@ -34,6 +34,8 @@ import { Course } from "@/types";
 import { isNull } from "util";
 import { Button } from "@mui/material";
 
+import TuitionPayments from "./TuitionPayments";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export default function SettingsPage({ courseId }: { courseId: number }) {
@@ -312,6 +314,7 @@ export default function SettingsPage({ courseId }: { courseId: number }) {
 
                       <CopyTextbox />
                     </div>
+                    <TuitionPayments key={course.id} course={course} />
                     <div className="mt-12 mb-8 flex justify-between mx-auto">
                       <h1 className="text-3xl tracking-tight font-semibold text-gray-900 dark:text-white">
                         Students

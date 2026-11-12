@@ -394,6 +394,14 @@ const changePasswordAdmin = async (id: number, newPassword: string) => {
   return data;
 }
 
+export async function tuitionRequest<T>(method: "GET" | "POST" | "PUT" | "DELETE", path: string, data?: unknown) {
+  const response = await axios.request<T>({
+    method, url: apiBaseUrl + "/tuition-payments/" + path, data,
+    headers: { Authorization: token },
+  });
+  return response.data;
+}
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
   getAll,
