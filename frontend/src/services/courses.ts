@@ -264,7 +264,16 @@ const syncZoomRecordings = async (codeParam: string) => {
   return data;
 };
 
-const directSignUp = async (courseId: string, user: NewUser) => {
+const generateRegistrationPassword = async (courseId: number) => {
+  const { data } = await axios.post<{ password: string }>(
+    `${apiBaseUrl}/courses/${courseId}/registration-password`,
+    null,
+    { headers: { Authorization: token } }
+  );
+  return data.password;
+};
+
+const directSignUp = async (courseId: string, user: NewUser & { registrationPassword: string }) => {
   const { data } = await axios.post(
     `${apiBaseUrl}/users/directsignup/${courseId}`,
     user
@@ -419,6 +428,7 @@ export default {
   getAllZoomRecordings,
   syncZoomRecordings,
   directSignUp,
+  generateRegistrationPassword,
   userSignUp,
   getAssignment,
   createAssignment,

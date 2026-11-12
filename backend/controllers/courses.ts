@@ -1,4 +1,6 @@
 import express from "express";
+import { randomBytes } from "crypto";
+import bcrypt from "bcryptjs";
 import {
   Section,
   User,
@@ -88,7 +90,10 @@ router.put("/:id", tokenExtractor, async (req: CustomRequest, res, next) => {
   if (user.id.toString() !== course.teacherId.toString()) {
     return res.status(401).send("No permissions to edit course");
   }
-  course.set(req.body);
+  const { title, description, zoomName } = req.body;
+  if (title !== undefined) course.set("title", title);
+  if (description !== undefined) course.set("description", description);
+  if (zoomName !== undefined) course.set("zoomName", zoomName);
   try {
     await course.save();
     const editedCourse = await getUpdatedCourse(course.id);
@@ -96,6 +101,22 @@ router.put("/:id", tokenExtractor, async (req: CustomRequest, res, next) => {
       return res.status(404).send("Course not found");
     }
     return res.json(editedCourse);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/:id/registration-password", tokenExtractor, async (req: CustomRequest, res, next) => {
+  try {
+    const course = await Course.findByPk(req.params.id);
+    if (!course) return res.status(404).send("Course not found");
+    if (req.user?.id !== course.teacherId) {
+      return res.status(403).send("Only the course owner can create a registration password");
+    }
+
+    const password = randomBytes(18).toString("base64url");
+    await course.update({ registrationPasswordHash: await bcrypt.hash(password, 10) });
+    return res.set("Cache-Control", "no-store").json({ password });
   } catch (error) {
     return next(error);
   }

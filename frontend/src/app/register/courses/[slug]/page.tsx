@@ -52,6 +52,7 @@ export default function MyPage({ params }: { params: { slug: string } }) {
     password: Yup.string()
       .min(8, "Your password must at least be 8 characters!")
       .required("How are you going to log in without a password? 🙄"),
+    registrationPassword: Yup.string().required("Enter the password from your teacher"),
     confirmPwd: Yup.string().oneOf(
       [Yup.ref("password")],
       "Passwords must match"
@@ -59,7 +60,7 @@ export default function MyPage({ params }: { params: { slug: string } }) {
   });
 
   const handleSignUp = async (values: any) => {
-    const { name, email, password, username } = values;
+    const { name, email, password, username, registrationPassword } = values;
     try {
       const user: NewUser = {
         name: name,
@@ -69,7 +70,7 @@ export default function MyPage({ params }: { params: { slug: string } }) {
         courseString: course,
       };
 
-      await courseService.directSignUp(course, user);
+      await courseService.directSignUp(course, { ...user, registrationPassword });
       router.push("/login");
     } catch (error: unknown) {
       // Error handling
@@ -127,6 +128,7 @@ export default function MyPage({ params }: { params: { slug: string } }) {
                   email: "",
                   password: "",
                   confirmPwd: "",
+                  registrationPassword: "",
                 }}
                 validationSchema={DisplayingErrorMessagesSchema}
                 onSubmit={(values) => {
@@ -234,6 +236,17 @@ export default function MyPage({ params }: { params: { slug: string } }) {
                         <div className="mt-1 text-xs text-red-600">
                           {errors.confirmPwd}
                         </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="registrationPassword" className="block mb-2 text-sm font-medium dark:text-white">
+                        Course registration password
+                      </label>
+                      <Field type="password" name="registrationPassword" id="registrationPassword"
+                        autoComplete="off" required className="w-full rounded-lg border p-2.5 dark:bg-bg dark:text-white" />
+                      {touched.registrationPassword && errors.registrationPassword && (
+                        <div className="mt-1 text-xs text-red-600">{errors.registrationPassword}</div>
                       )}
                     </div>
 

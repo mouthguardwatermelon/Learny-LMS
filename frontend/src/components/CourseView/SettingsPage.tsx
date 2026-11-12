@@ -33,6 +33,7 @@ import { styled } from "@mui/material/styles";
 import { Course } from "@/types";
 import { isNull } from "util";
 import { Button } from "@mui/material";
+import courseService from "@/services/courses";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,6 +50,8 @@ export default function SettingsPage({ courseId }: { courseId: number }) {
   const [zoomName, setZoomName] = useState<string>(
     course?.zoomName ? course.zoomName : ""
   );
+  const [registrationPassword, setRegistrationPassword] = useState('');
+  const [generatingPassword, setGeneratingPassword] = useState(false);
   const [copyClicked, setCopyClicked] = useState<boolean>(false);
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -211,9 +214,20 @@ export default function SettingsPage({ courseId }: { courseId: number }) {
     }
   };
 
+  const generateRegistrationPassword = async () => {
+    setGeneratingPassword(true);
+    try {
+      setRegistrationPassword(await courseService.generateRegistrationPassword(courseId));
+    } catch {
+      dispatch(setNotification({ message: "Could not generate a registration password.", type: "error" }, 5000));
+    } finally {
+      setGeneratingPassword(false);
+    }
+  };
+
   const CopyTextbox = () => {
     // Set the initial text for the textbox
-    const text = `https://learny-lms.vercel.app/register/courses/${course.id}`;
+    const text = `${window.location.origin}/register/courses/${course.id}`;
     // Function to handle the "Copy" button click
     const handleCopy = () => {
       setCopyClicked(true);
@@ -311,6 +325,16 @@ export default function SettingsPage({ courseId }: { courseId: number }) {
                       </p>
 
                       <CopyTextbox />
+                      <p className="mt-3 dark:text-text">
+                        Students need the registration password. Generating a new password replaces the previous one.
+                      </p>
+                      <Button onClick={generateRegistrationPassword} disabled={generatingPassword}>
+                        Generate registration password
+                      </Button>
+                      {registrationPassword && (
+                        <TextField label="Registration password" value={registrationPassword}
+                          InputProps={{ readOnly: true }} fullWidth />
+                      )}
                     </div>
                     <div className="mt-12 mb-8 flex justify-between mx-auto">
                       <h1 className="text-3xl tracking-tight font-semibold text-gray-900 dark:text-white">

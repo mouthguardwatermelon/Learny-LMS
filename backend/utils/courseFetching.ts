@@ -161,7 +161,7 @@ export const getCommonOrder = (): any[] => [
 ];
 
 export const getCoursesByRole = async (user: User) => {
-  const commonAttributes = { exclude: ["teacherId"] };
+  const commonAttributes = { exclude: ["teacherId", "registrationPasswordHash"] };
   const commonInclude = getCommonInclude(true, user.role, user.id);
 
   let where = {};
@@ -187,7 +187,7 @@ export const getCoursesByRole = async (user: User) => {
 };
 
 export const getOneCourseByRole = async (user: User, courseId: number) => {
-  const commonAttributes = { exclude: ["teacherId"] };
+  const commonAttributes = { exclude: ["teacherId", "registrationPasswordHash"] };
   const commonInclude = getCommonInclude(false, user.role, user.id);
   const commonOrder = getCommonOrder();
 
