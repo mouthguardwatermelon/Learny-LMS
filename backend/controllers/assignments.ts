@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import express from "express";
 import {
   Section,
@@ -213,7 +214,7 @@ router.post(
 
       // Defining parameters for S3 file upload
       const params = {
-        Key: dirName + fileName,
+        Key: dirName + randomUUID() + "-" + fileName,
         Body: fileData,
         Bucket: bucketName ? bucketName : "",
         ContentType: req?.file.mimetype,
@@ -313,7 +314,7 @@ router.put(
           .send(`You don't have permissions to edit this assignment`);
       }
 
-      assignment.set(req.body);
+      assignment.set(req.body, { attributes: ["name", "instructions", "visibledate", "deadline", "marks"] });
       await assignment.save();
 
       const editedCourse = await getUpdatedCourse(course.id);
@@ -349,15 +350,6 @@ router.delete("/:id", tokenExtractor, async (req: CustomRequest, res, next) => {
         .send(`You don't have permissions to delete this assignment`);
     }
 
-    // deleting the file on AWS S3 bucket first
-    const params = {
-      Bucket: process.env.AWS_BUCKET_NAME ? process.env.AWS_BUCKET_NAME : "",
-      Key: assignment.awskey,
-    };
-
-    s3.deleteObject(params, function (err, data) {});
-
-    // then delete assignment on database
     await assignment.destroy();
 
     // Display the edited course after the chapter is deleted

@@ -1,4 +1,5 @@
 import express, { Application } from "express";
+import { startS3Cleanup } from "./utils/s3Cleanup";
 import { connectToDatabase } from "./utils/db";
 import usersRouter from "./controllers/users";
 import coursesRouter from "./controllers/courses";
@@ -42,6 +43,7 @@ app.use(errorHandler);
 app.listen(PORT, async () => {
   try {
     await connectToDatabase();
+    startS3Cleanup();
   } catch (err) {
     console.log(err);
   }

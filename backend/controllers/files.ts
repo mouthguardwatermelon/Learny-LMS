@@ -4,21 +4,11 @@ import { Course } from "../models";
 import { nextTick } from "process";
 import { tokenExtractor } from "../utils/middleware";
 import { CustomRequest } from "../types";
-import AWS from "aws-sdk";
-import dotenv from "dotenv";
 import { Includeable } from "sequelize";
 import { Op } from "sequelize";
 import getUpdatedCourse from "../utils/getUpdatedCourse";
 
 const router = express.Router();
-dotenv.config();
-
-AWS.config.update({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.ACCESS_KEY_ID,
-  secretAccessKey: process.env.SECRET_ACCESS_KEY,
-});
-const s3 = new AWS.S3();
 
 // to edit details on the file
 router.put("/:id", tokenExtractor, async (req: CustomRequest, res, next) => {
@@ -43,7 +33,7 @@ router.put("/:id", tokenExtractor, async (req: CustomRequest, res, next) => {
         .send(`You don't have permissions to edit this file`);
     }
 
-    file.set(req.body);
+    file.set(req.body, { attributes: ["name", "visibledate"] });
     await file.save();
     const editedCourse = await getUpdatedCourse(course.id);
     if (!editedCourse) {
@@ -78,15 +68,6 @@ router.delete("/:id", tokenExtractor, async (req: CustomRequest, res, next) => {
         .send(`You don't have permissions to delete this file`);
     }
 
-    // deleting the file on AWS S3 bucket first
-    const params = {
-      Bucket: process.env.AWS_BUCKET_NAME ? process.env.AWS_BUCKET_NAME : "",
-      Key: file.awskey,
-    };
-
-    s3.deleteObject(params, function (err, data) {});
-
-    // then delete file on database
     await file.destroy();
 
     // Display the edited course after the chapter is deleted

@@ -1,3 +1,4 @@
+import { courseObjectLock, sequelize } from "../utils/db";
 import express from "express";
 import {
   Section,
@@ -137,86 +138,92 @@ router.post(
     }
 
     try {
-      const originalChapter = await Chapter.findByPk(req.params.id, {
-        include: [
-          {
-            model: Section,
-            as: "sections",
-            include: [
-              {
-                model: File,
-                as: "files",
-                required: false,
-              },
-              {
-                model: Assignment,
-                as: "assignments",
-                required: false,
-              },
-            ],
-          },
-        ],
-      });
-
-      if (!originalChapter) {
-        return res.status(404).send("Chapter not found");
-      }
-
-      const newCourseId = req.body.newCourseId;
-      const newCourse = await Course.findByPk(newCourseId);
-
-      if (!newCourse) {
-        return res.status(404).send("New course not found");
-      }
-
-      if (user.id.toString() !== newCourse.teacherId.toString()) {
-        return res
-          .status(403)
-          .send(
-            "You don't have permissions to copy this chapter to the specified course"
-          );
-      }
-
-      const newChapter = await Chapter.create({
-        title: originalChapter.title,
-        pinned: false,
-        courseId: newCourseId,
-      });
-
-      for (const section of originalChapter.sections) {
-        const newSection = await Section.create({
-          title: section.title,
-          chapterId: newChapter.id,
+      const copied = await sequelize.transaction(async (transaction) => {
+        await sequelize.query("SELECT pg_advisory_xact_lock_shared(:key)", {
+          replacements: { key: courseObjectLock }, transaction,
+        });
+        const originalChapter = await Chapter.findByPk(req.params.id, {
+          transaction,
+          include: [
+            {
+              model: Section,
+              as: "sections",
+              include: [
+                {
+                  model: File,
+                  as: "files",
+                  required: false,
+                },
+                {
+                  model: Assignment,
+                  as: "assignments",
+                  required: false,
+                },
+              ],
+            },
+          ],
         });
 
-        for (const file of section.files) {
-          await File.create({
-            name: file.name,
-            link: file.link,
-            visibledate: file.visibledate,
-            sectionId: newSection.id,
-          });
+        if (!originalChapter) {
+          return res.status(404).send("Chapter not found");
         }
 
-        for (const assignment of section.assignments) {
-          await Assignment.create({
-            name: assignment.name,
-            link: assignment.link,
-            sectionId: newSection.id,
-            awskey: assignment.awskey,
-            visibledate: new Date(),
-            deadline: assignment.deadline,
-            instructions: assignment.instructions,
-            marks: assignment.marks,
-          });
+        const newCourseId = req.body.newCourseId;
+        const newCourse = await Course.findByPk(newCourseId, { transaction });
+
+        if (!newCourse) {
+          return res.status(404).send("New course not found");
         }
-      }
 
-      const editedCourse = await getUpdatedCourse(newCourseId);
-      if (!editedCourse) {
-        return res.status(404).send("Course not found");
-      }
+        if (user.id.toString() !== newCourse.teacherId.toString()) {
+          return res
+            .status(403)
+            .send(
+              "You don't have permissions to copy this chapter to the specified course"
+            );
+        }
 
+        const newChapter = await Chapter.create({
+          title: originalChapter.title,
+          pinned: false,
+          courseId: newCourseId,
+        }, { transaction });
+
+        for (const section of originalChapter.sections) {
+          const newSection = await Section.create({
+            title: section.title,
+            chapterId: newChapter.id,
+          }, { transaction });
+
+          for (const file of section.files) {
+            await File.create({
+              name: file.name,
+              link: file.link,
+              awskey: file.awskey,
+              visibledate: file.visibledate,
+              sectionId: newSection.id,
+            }, { transaction });
+          }
+
+          for (const assignment of section.assignments) {
+            await Assignment.create({
+              name: assignment.name,
+              link: assignment.link,
+              sectionId: newSection.id,
+              awskey: assignment.awskey,
+              visibledate: new Date(),
+              deadline: assignment.deadline,
+              instructions: assignment.instructions,
+              marks: assignment.marks,
+            }, { transaction });
+          }
+        }
+
+        return newCourse.id;
+      });
+      if (typeof copied !== "number") return copied;
+      const editedCourse = await getUpdatedCourse(copied);
+      if (!editedCourse) return res.status(404).send("Course not found");
       return res.json(editedCourse);
     } catch (error) {
       next(error);
