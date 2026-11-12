@@ -1,4 +1,5 @@
 "use client";
+import { MarkdownEditor } from "@/components/Markdown";
 import IconButton from "@mui/material/IconButton";
 import { MenuProps } from "@mui/material/Menu";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -271,7 +272,7 @@ export default function SectionMenu({ id, title }: Props) {
       dispatch(setNotification(notif, 5000));
       return;
     }
-    if (instructions == null) {
+    if (!instructions?.trim()) {
       const notif: Notif = {
         message: "Add instructions for the assignment.",
         type: "error",
@@ -595,15 +596,7 @@ export default function SectionMenu({ id, title }: Props) {
               variant="standard"
             />
 
-            <TextField
-              sx={{ mt: 3, mb: 2 }}
-              placeholder="Assignment Instructions (optional)"
-              multiline
-              onChange={({ target }) => setInstructions(target.value)}
-              fullWidth
-              rows={4}
-              maxRows={8}
-            />
+            <MarkdownEditor label="Assignment instructions" value={instructions ?? ""} onChange={setInstructions} />
 
             <TextField
               id="outlined-number"

@@ -99,6 +99,7 @@ export interface NewFile {
 }
 
 export interface NewAssignment {
+  instructions?: string;
   name: string;
   link?: string;
   visibledate?: string;

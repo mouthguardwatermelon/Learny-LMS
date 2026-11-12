@@ -44,6 +44,7 @@ import { setNotification } from "@/reducers/notifReducer";
 import { Notif } from "@/types";
 import { AxiosError } from "axios";
 import { TextField } from "@mui/material";
+import { Markdown } from "@/components/Markdown";
 
 const inter = Inter({ subsets: ["latin"] });
 export default function MyPage({ params }: { params: { slug: string } }) {
@@ -488,11 +489,7 @@ export default function MyPage({ params }: { params: { slug: string } }) {
                       <h2 className="mb-3 text-2xl tracking-tight font-semibold text-gray-900 dark:text-white">
                         <u>Instructions</u>
                       </h2>
-                      <p className="text-base mb-4 dark:text-text">
-                        {assignment?.instructions
-                          ? assignment.instructions
-                          : "No instructions given."}
-                      </p>
+                      <Markdown value={assignment.instructions || "No instructions given."} />
                     </div>
                     <div className="mb-10">
                       <h2 className="mb-3 text-2xl tracking-tight font-semibold text-gray-900 dark:text-white">
