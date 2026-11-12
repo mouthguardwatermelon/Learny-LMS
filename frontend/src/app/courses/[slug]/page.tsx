@@ -40,7 +40,7 @@ export default function CoursePage({ params }: { params: { slug: string } }) {
   const isMobile = useIsMobile();
   const dispatch = useAppDispatch();
   const [isLoading, user] = useAuth();
-  const [getCourseLoading, setGetCourseLoading] = useState(true);
+  const [result, setResult] = useState<{ slug: string; status?: number }>();
   const [value, setValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -58,13 +58,17 @@ export default function CoursePage({ params }: { params: { slug: string } }) {
   });
 
   useEffect(() => {
+    let active = true;
     const fetchCourse = async () => {
       if (user) {
-        await dispatch(initializeCourses(parseInt(params.slug)));
-        setGetCourseLoading(false);
+        const status = /^\d+$/.test(params.slug)
+          ? await dispatch(initializeCourses(Number(params.slug)))
+          : 404;
+        if (active) setResult({ slug: params.slug, status });
       }
     };
     fetchCourse();
+    return () => { active = false; };
   }, [dispatch, user, params.slug]);
 
   useEffect(() => {
@@ -73,7 +77,7 @@ export default function CoursePage({ params }: { params: { slug: string } }) {
     }
   }, [isLoading, user, router]);
 
-  if (isLoading || getCourseLoading) {
+  if (isLoading || result?.slug !== params.slug) {
     return (
       <main className="bg-bg min-h-screen flex items-center justify-center">
         <CircularProgress style={{ color: "#fec006" }} />
@@ -81,8 +85,11 @@ export default function CoursePage({ params }: { params: { slug: string } }) {
     );
   }
 
-  if (!Array.isArray(courses)) {
-    return null;
+  if (result.status === 403 || result.status === 404) {
+    return <NotFoundPage status={result.status} />;
+  }
+  if (result.status !== undefined) {
+    return <NotFoundPage status={500} />;
   }
 
   const course = courses.find((course) => course.id === parseInt(params.slug));

@@ -38,8 +38,18 @@ router.get("/:id", tokenExtractor, async (req: CustomRequest, res, next) => {
     if (!user) {
       return res.status(404).send("User not found");
     }
-    const courseId = req.params.id;
-    const course = await getOneCourseByRole(user, Number(courseId));
+    const courseId = Number(req.params.id);
+    if (!/^\d+$/.test(req.params.id) || courseId < 1 || courseId > 2147483647) {
+      return res.status(404).send("Course not found");
+    }
+    const courses = await getOneCourseByRole(user, courseId);
+    const course = courses.filter((candidate) => candidate.id === courseId);
+    if (course.length === 0) {
+      const exists = await Course.count({ where: { id: courseId } });
+      return exists
+        ? res.status(403).send("You do not have access to this course")
+        : res.status(404).send("Course not found");
+    }
     return res.send(course);
   } catch (err) {
     return next(err);

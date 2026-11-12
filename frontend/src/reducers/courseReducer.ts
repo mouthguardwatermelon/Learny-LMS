@@ -46,7 +46,7 @@ export const { create, edit, setCourses, remove } = courseSlice.actions;
 
 export const initializeCourses = (
   id: number = -1
-): ThunkAction<void, AppState, unknown, Action> => {
+): ThunkAction<Promise<number | undefined>, AppState, unknown, Action> => {
   return async (dispatch) => {
     try {
       if (id === -1) {
@@ -56,7 +56,11 @@ export const initializeCourses = (
         const course = await courseService.getOne(id);
         dispatch(setCourses(course));
       }
+      return undefined;
     } catch (error) {
+      if (id !== -1) {
+        return error instanceof AxiosError ? error.response?.status ?? 500 : 500;
+      }
       if (error instanceof AxiosError) {
         const notif: Notif = {
           message: error.response?.data,
@@ -70,6 +74,7 @@ export const initializeCourses = (
         };
         dispatch(setNotification(notif, 5000));
       }
+      return 500;
     }
   };
 };
