@@ -394,6 +394,27 @@ const changePasswordAdmin = async (id: number, newPassword: string) => {
   return data;
 }
 
+export interface AccountProfile {
+  name: string;
+  username: string;
+  email: string;
+  role: string;
+}
+
+export async function getProfile() {
+  const { data } = await axios.get<AccountProfile>(apiBaseUrl + "/users/me", {
+    headers: { Authorization: token },
+  });
+  return data;
+}
+
+export async function updateProfileSettings(settings: { email: string; currentPassword: string; newPassword?: string }) {
+  const { data } = await axios.put<AccountProfile>(apiBaseUrl + "/users/me/settings", settings, {
+    headers: { Authorization: token },
+  });
+  return data;
+}
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
   getAll,

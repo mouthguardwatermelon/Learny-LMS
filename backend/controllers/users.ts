@@ -8,7 +8,49 @@ import { CustomRequest } from "../types";
 import Blacklistedtoken from "../models/blacklistedtoken";
 const bcrypt = require("bcryptjs");
 
+import { sequelize } from "../utils/db";
+
 const router = express.Router();
+
+function accountProfile(user: User) {
+  return { name: user.name, username: user.username, email: user.email, role: user.role };
+}
+
+router.get("/me", tokenExtractor, (req: CustomRequest, res) => {
+  if (!req.user) return res.sendStatus(401);
+  return res.json(accountProfile(req.user));
+});
+
+router.put("/me/settings", tokenExtractor, async (req: CustomRequest, res, next) => {
+  const user = req.user;
+  if (!user) return res.sendStatus(401);
+  const { email, currentPassword, newPassword } = req.body;
+  if (typeof currentPassword !== "string" || !currentPassword || Buffer.byteLength(currentPassword) > 72 ||
+      typeof email !== "string" || !email.trim() || email.length > 254 ||
+      (newPassword !== undefined && (typeof newPassword !== "string" ||
+        newPassword.length < 8 || Buffer.byteLength(newPassword) > 72))) {
+    return res.status(400).send("Enter a valid email and current password. New passwords require 8 characters and at most 72 bytes.");
+  }
+
+  try {
+    const updated = await sequelize.transaction(async (transaction) => {
+      const account = await User.findByPk(user.id, { lock: transaction.LOCK.UPDATE, transaction });
+      if (!account || account.disabled || account.authVersion !== user.authVersion ||
+          !(await bcrypt.compare(currentPassword, account.passwordHash))) return null;
+      account.email = email.trim();
+      if (newPassword !== undefined) {
+        account.passwordHash = await bcrypt.hash(newPassword, 10);
+        account.authVersion += 1;
+      }
+      await account.save({ transaction });
+      return accountProfile(account);
+    });
+    if (!updated) return res.status(403).send("The current password is incorrect or your session has expired.");
+    return res.json(updated);
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.get("/", tokenExtractor, async (req: CustomRequest, res) => {
   const user = req.user;
