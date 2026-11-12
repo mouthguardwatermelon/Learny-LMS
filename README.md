@@ -104,6 +104,8 @@ SECRET_ACCESS_KEY= (From AWS)
 AWS_REGION= (From AWS)
 AWS_BUCKET_NAME= (From AWS)
 PORT=3001
+SENDGRID_SECRET= (SendGrid API key for assignment reminders)
+ASSIGNMENT_REMINDER_FROM= (Verified SendGrid sender for assignment reminders)
 ```
 
 ## Development
