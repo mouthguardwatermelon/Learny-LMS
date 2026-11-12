@@ -394,6 +394,20 @@ const changePasswordAdmin = async (id: number, newPassword: string) => {
   return data;
 }
 
+export interface CourseDocument {
+  id?: number;
+  title: string;
+  body: string;
+}
+
+export async function lessonDocumentRequest<T>(method: "GET" | "POST" | "PUT" | "DELETE", path: string, data?: unknown) {
+  const response = await axios.request<T>({
+    method, url: apiBaseUrl + "/lesson-documents/" + path, data,
+    headers: { Authorization: token },
+  });
+  return response.data;
+}
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
   getAll,
